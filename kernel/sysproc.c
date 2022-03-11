@@ -81,6 +81,39 @@ int
 sys_pgaccess(void)
 {
   // lab pgtbl: your code here.
+    uint64 startva, useradd;
+  uint64 buf = 0;
+  int num;
+  pte_t* pte;
+  struct proc *p = mycpu()->proc;
+
+  if(argaddr(0, &startva)< 0)
+    return -1;
+
+  if(argint(1, &num) < 0)
+    return -1;
+
+  if(argaddr(2, &useradd) < 0)
+    return -1;
+
+  printf("startva = %p num = %d useradd = %p\n", startva, num, useradd);
+
+  //It's okay to set an upper limit on the number of pages that can be scanned.
+  if(startva > MAXVA){
+    return -2;
+  }
+
+  for(int i = 0; i < num; i++){
+    pte = walk(p->pagetable, startva, 0);
+    if(*pte & PTE_A){
+      buf |= (1L << i);
+      *pte &= (~PTE_A);
+    }
+
+    startva += PGSIZE;
+  }
+
+  copyout(p->pagetable, useradd, (char *)&buf, sizeof(buf));
   return 0;
 }
 #endif
